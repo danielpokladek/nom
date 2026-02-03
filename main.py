@@ -9,22 +9,12 @@ class Debug(Enum):
     NORMAL = 1
     VERBOSE = 2
 
-DEBUG_LEVEL = Debug.NORMAL
-
+debug_level = Debug.NORMAL
 map_types = ["diffuse", "albedo", "normal", "roughness"]
-
-splitChar = "_"
-fileList = []
+split_char = "_"
 
 async def main():
-    filesToRename = []
-    rawFiles = [file for file in os.listdir('./test') if os.path.isfile("./test/" + file)]
-
-    for file in rawFiles:
-        newFileName = parseFileName(file)
-        
-        if (file != newFileName):
-            filesToRename.append([file, newFileName])
+    filesToRename = getFilesToRename()
 
     if len(filesToRename) == 0:
         print("No files to rename - have a good day!")
@@ -45,8 +35,17 @@ async def main():
 
         os.rename("./test/" + oldName, "./test/" + newName)
 
-    # parseFileName("frame METAL_albedo_test-NoRmAL 012.png")
-            
+def getFilesToRename():
+    filesToRename = []
+    rawFiles = [file for file in os.listdir('./test') if os.path.isfile("./test/" + file)]
+
+    for file in rawFiles:
+        newFileName = parseFileName(file)
+        
+        if (file != newFileName):
+            filesToRename.append([file, newFileName])
+
+    return filesToRename
 
 def parseFileName(originalFileName):
     split = os.path.splitext(originalFileName)
@@ -64,7 +63,7 @@ def parseFileName(originalFileName):
     for i in range(len(letters)):
         letters[i] = letters[i].lower()
 
-        if letters[i] == splitChar:
+        if letters[i] == split_char:
             continue
 
         if letters[i] == "0":
@@ -112,7 +111,7 @@ def parseFileName(originalFileName):
 
     cleanFileName = "_".join(splitWords)
 
-    if DEBUG_LEVEL == Debug.VERBOSE:
+    if debug_level == Debug.VERBOSE:
         print("Original Name:", originalFileName)
         print(letters)
 
@@ -124,13 +123,13 @@ def parseFileName(originalFileName):
 
 def parseSeparator(letter, separator):
     if letter == "-":
-        return splitChar
+        return split_char
 
     if letter == " ":
-        return splitChar
+        return split_char
 
     if letter == ".":
-        return splitChar
+        return split_char
 
     return letter
 
