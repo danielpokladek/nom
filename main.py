@@ -9,7 +9,7 @@ class Debug(Enum):
     NORMAL = 1
     VERBOSE = 2
 
-DEBUG_LEVEL = Debug.VERBOSE
+DEBUG_LEVEL = Debug.NORMAL
 
 map_types = ["diffuse", "albedo", "normal", "roughness"]
 
@@ -18,11 +18,17 @@ fileList = []
 
 async def main():
     filesToRename = []
+    rawFiles = [file for file in os.listdir('./test') if os.path.isfile("./test/" + file)]
 
-    for subdir, dirs, files in os.walk("./test"):
-        for file in files:
-            newFileName = parseFileName(file)
+    for file in rawFiles:
+        newFileName = parseFileName(file)
+        
+        if (file != newFileName):
             filesToRename.append([file, newFileName])
+
+    if len(filesToRename) == 0:
+        print("No files to rename - have a good day!")
+        return
 
     print("Following files will be renamed..")
     print()
