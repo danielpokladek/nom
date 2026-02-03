@@ -1,5 +1,6 @@
 import os
 from enum import Enum
+from tabulate import tabulate
 
 class Debug(Enum):
     NORMAL = 1
@@ -7,13 +8,22 @@ class Debug(Enum):
 
 DEBUG_LEVEL = Debug.VERBOSE
 
+map_types = ["diffuse", "normal", "roughness"]
+
 splitChar = "_"
 fileList = []
 
 def main():
+    filesToRename = []
+
     for subdir, dirs, files in os.walk("./test"):
         for file in files:
-            parseFileName(file)
+            newFileName = parseFileName(file)
+            filesToRename.append([file, newFileName])
+
+    print("Following files will be renamed")
+    print()
+    print(tabulate(filesToRename, headers=["Old Name", "New Name"]))
 
     # parseFileName("frame METAL_albedo_test-NoRmAL 012.png")
             
@@ -64,16 +74,31 @@ def parseFileName(originalFileName):
         letters.insert(numberStartIndex, number.zfill(3))
 
     cleanFileName = "".join(letters)
-    cleanFileName = cleanFileName + extension
 
-    print("Original Name:", originalFileName)
+    splitWords = cleanFileName.split("_")
+
+    if "" in splitWords:
+        splitWords.remove("")
+
+    for mapType in map_types:
+        if mapType in splitWords:
+            index = splitWords.index(mapType)
+            elem = splitWords.pop(index)
+
+            if number == "":
+                splitWords.append(elem)
+
+    cleanFileName = "_".join(splitWords)
 
     if DEBUG_LEVEL == Debug.VERBOSE:
+        print("Original Name:", originalFileName)
         print(letters)
 
-    print("Clean Name:", cleanFileName)
-    print("--- --- ---")
-    print()
+        print("Clean Name:", cleanFileName + extension)
+        print("--- --- ---")
+        print()
+
+    return cleanFileName + extension
 
 def parseSeparator(letter, separator):
     if letter == "-":
