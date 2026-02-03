@@ -1,4 +1,7 @@
 import os
+import asyncio
+
+from aioshutil import copy2
 from enum import Enum
 from tabulate import tabulate
 
@@ -8,12 +11,12 @@ class Debug(Enum):
 
 DEBUG_LEVEL = Debug.VERBOSE
 
-map_types = ["diffuse", "normal", "roughness"]
+map_types = ["diffuse", "albedo", "normal", "roughness"]
 
 splitChar = "_"
 fileList = []
 
-def main():
+async def main():
     filesToRename = []
 
     for subdir, dirs, files in os.walk("./test"):
@@ -21,9 +24,20 @@ def main():
             newFileName = parseFileName(file)
             filesToRename.append([file, newFileName])
 
-    print("Following files will be renamed")
+    print("Following files will be renamed..")
     print()
     print(tabulate(filesToRename, headers=["Old Name", "New Name"]))
+
+    if not os.path.exists("./test/original"):
+        os.makedirs("./test/original")
+
+    for file in filesToRename:
+        oldName = file[0]
+        newName = file[1]
+
+        await copy2(f'./test/{oldName}', f'./test/original/{oldName}')
+
+        os.rename("./test/" + oldName, "./test/" + newName)
 
     # parseFileName("frame METAL_albedo_test-NoRmAL 012.png")
             
@@ -87,6 +101,8 @@ def parseFileName(originalFileName):
 
             if number == "":
                 splitWords.append(elem)
+            else:
+                splitWords.insert(len(splitWords) - 1, elem)
 
     cleanFileName = "_".join(splitWords)
 
@@ -113,4 +129,4 @@ def parseSeparator(letter, separator):
     return letter
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
