@@ -1,36 +1,35 @@
 import os
+from enum import Enum
+
+class Debug(Enum):
+    NORMAL = 1
+    VERBOSE = 2
+
+DEBUG_LEVEL = Debug.VERBOSE
 
 splitChar = "_"
 fileList = []
 
 def main():
-    choice = 0
+    for subdir, dirs, files in os.walk("./test"):
+        for file in files:
+            parseFileName(file)
 
-    # while choice != 4:
-    #     print("*** File List ***")
-    #     print("1) Option A")
-    #     print("2) Option B")
-    #     print("3) Option C")
-    #     print("4) Quit")
-    #     choice = int(input())
-
-    # for subdir, dirs, files in os.walk("./test"):
-    #     for file in files:
-    #         parseFileName(file)
-
-    parseFileName("frame METAL_albedo_test-NoRmAL.png")
+    # parseFileName("frame METAL_albedo_test-NoRmAL 012.png")
             
 
 def parseFileName(originalFileName):
     split = os.path.splitext(originalFileName)
     fileName = split[0]
     extension = split[1]
-    # words = splitPath.split()
     
     cleanFileName = ""
-
-    # for i in shortFileName:
     letters = list(fileName)
+
+    wasPreviousNumber = False
+    numberStartIndex = 0
+    numberLength = 1
+    number = ""
     
     for i in range(len(letters)):
         letters[i] = letters[i].lower()
@@ -38,32 +37,55 @@ def parseFileName(originalFileName):
         if letters[i] == splitChar:
             continue
 
-        if letters[i] == "-":
-            letters[i] = splitChar
+        if letters[i] == "0":
+            letters[i] = ""
+            continue
 
-        if letters[i] == " ":
-            letters[i] = splitChar
+        if letters[i].isnumeric():
+            if wasPreviousNumber:
+                number += letters[i]
+                numberLength += 1
+            else:
+                number = letters[i]
+                numberStartIndex = i
+                numberLength = 1
+                wasPreviousNumber = True
+        else:
+            wasPreviousNumber = False
 
-        if letters[i] == ".":
-            letters[i] = splitChar
-            
+        letters[i] = parseSeparator(letters[i], "-")
+        letters[i] = parseSeparator(letters[i], ".")
+        letters[i] = parseSeparator(letters[i], " ")
+    
+    if number != "":
+        for i in range(numberLength):
+            letters.pop(numberStartIndex)
 
-    print(letters)
-    print("".join(letters))
+        letters.insert(numberStartIndex, number.zfill(3))
+
     cleanFileName = "".join(letters)
+    cleanFileName = cleanFileName + extension
 
-    print(originalFileName)
-    print("Split Name: " + fileName)
-    # print("Words In Name:", words)
-    print("Clean File Name:", cleanFileName)
-    print("Clean With Extension:", cleanFileName + extension)
+    print("Original Name:", originalFileName)
+
+    if DEBUG_LEVEL == Debug.VERBOSE:
+        print(letters)
+
+    print("Clean Name:", cleanFileName)
     print("--- --- ---")
     print()
 
-def removeSeparator(text, separator):
-    splitWords = text.split(separator)
+def parseSeparator(letter, separator):
+    if letter == "-":
+        return splitChar
 
-    return splitWords
+    if letter == " ":
+        return splitChar
+
+    if letter == ".":
+        return splitChar
+
+    return letter
 
 if __name__ == "__main__":
     main()
