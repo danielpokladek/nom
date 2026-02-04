@@ -1,6 +1,5 @@
 import os
 import asyncio
-import argparse
 import webbrowser
 
 from dataclasses import dataclass
@@ -9,30 +8,41 @@ from aioshutil import copy2
 from enum import Enum
 from tabulate import tabulate
 
+from src.parser import buildParser
+from src.parser import getParserArgs
+
 from src.config import loadConfig
 from src.config import createNewConfig
 from src.config import current_config
 
 class Debug(Enum):
+    """
+    Represents debug output levels with two options: NORMAL for standard
+    output and VERBOSE for detailed output.
+    """
     NORMAL = 1
     VERBOSE = 2
 
 map_types = ["diffuse", "albedo", "normal", "roughness"]
 
 async def main():
-    args = setupParser()
-
+    """
+    Main workflow for nom.
+    """
+    buildParser()
+    args = getParserArgs()
+    
     if args.reset:
         handleConfigReset()
         return
-
-    loadConfig()
-
+    
     if args.config:
         webbrowser.open("nom.config")
         return
+    
+    loadConfig()
 
-    files_to_rename: list[OldNewFileClass] = getFilesToRename()
+    files_to_rename: list[OldNewFileClass] = listFilesNeedingRename()
 
     if len(files_to_rename) == 0:
         print("No files to rename - have a good day!")
@@ -63,40 +73,11 @@ async def main():
 
         os.rename("./test/" + old_name, "./test/" + new_name)
 
-def setupParser():
-    parser = argparse.ArgumentParser(
-        prog="nom",
-        description="Normalize Our Mess - CLI tool for rule-based asset renaming.",
-        add_help=False
-    )
-
-    required = parser.add_argument_group("required arguments")
-    required.add_argument(
-        "-p", "--path",
-        help="Path to directory where assets should be organized."
-    )
-
-    optional = parser.add_argument_group("optional arguments")
-    optional.add_argument(
-        "-r", "--reset", action="store_true",
-        help="Resets config to original state."
-    )
-    optional.add_argument(
-        "-d", "--dry", action="store_true",
-        help="Dry run - shows what files would be renamed without actually renaming them."
-    )
-    optional.add_argument(
-        "-c", "--config", action="store_true",
-        help="Open config file in system default text editor."
-    )
-    optional.add_argument(
-        "-h", "--help", action="help",
-        help="Show this help message and exit."
-    )
-
-    return parser.parse_args()
-
 def handleConfigReset():
+    """
+    Prompts the user for confirmation and, if confirmed, resets the
+    configuration to its default state.
+    """
     user_input = input("Are you sure you want to reset the config to default state? [y/N]: ")
 
     if user_input.lower() == "y" or user_input.lower() == "yes":
@@ -109,22 +90,36 @@ def handleConfigReset():
 
 @dataclass
 class OldNewFileClass:
+    """
+    Represents a file renaming operation, storing the oldName and newName as
+    strings.
+    """
     oldName: str
     newName: str
 
-def getFilesToRename() -> list[OldNewFileClass]:
+def listFilesNeedingRename() -> list[OldNewFileClass]:
+    """
+    Returns a list of files in the whose names differ 
+    from their parsed names, indicating they need to be renamed.
+    """
     filesToRename: list[OldNewFileClass] = []
     rawFiles = [file for file in os.listdir('./test') if os.path.isfile("./test/" + file)]
 
     for file in rawFiles:
-        newFileName = parseFileName(file)
+        newFileName = formatFileName(file)
         
         if (file != newFileName):
             filesToRename.append(OldNewFileClass(file, newFileName))
 
     return filesToRename
 
-def parseFileName(originalFileName: str) -> str:
+def formatFileName(originalFileName: str) -> str:
+    """
+    Formats a file name by normalizing case, removing zeros, padding numeric
+    sequences, replacing separators, and reordering specific keywords based
+    on configuration settings. Returns the cleaned file name with its
+    original extension.
+    """
     split = os.path.splitext(originalFileName)
     fileName = split[0]
     extension = split[1]
@@ -162,7 +157,7 @@ def parseFileName(originalFileName: str) -> str:
         else:
             wasPreviousNumber = False
 
-        letters[i] = parseSeparator(letters[i])
+        letters[i] = substituteSeparator(letters[i])
     
     if number != "":
         for i in range(numberLength):
@@ -199,7 +194,11 @@ def parseFileName(originalFileName: str) -> str:
 
     return cleanFileName + extension
 
-def parseSeparator(letter: str):
+def substituteSeparator(letter: str):
+    """
+    Replaces commonly used separators in the input letter with the current
+    configuration's split_char; returns the original character otherwise.
+    """
     split_char = current_config.split_char
 
     if letter == "-":

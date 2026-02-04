@@ -14,6 +14,11 @@ config_name = "nom.config"
 current_config = Config()
 
 def loadConfig():
+    """
+    Loads configuration settings from a file, creating a new config if
+    missing, and updates current_config with values from the relevant
+    config sections.
+    """
     if not os.path.isfile(config_name):
         createNewConfig()
 
@@ -28,6 +33,9 @@ def loadConfig():
     current_config.debug_level = int(app_settings["debug_level"])
 
 def createNewConfig():
+    """
+    Creates a new configuration file with default settings using ConfigParser.
+    """
     config = ConfigParser()
     config["FILE_SETTINGS"] = {
         "split_char": "_",
