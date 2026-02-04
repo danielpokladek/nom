@@ -14,13 +14,13 @@ A Python based CLI tool used for rule-based asset and file renaming - because yo
   
 ```bash
 # Simple cleanup of the name
-frame diffuse METAL .png => frame_diffuse_metal.png
+frame diffuse METAL .png > frame_diffuse_metal.png
 
 # Ordering of words when specified word is detected
-NoRmAl Frame 055-metal- .png => frame_55_metal_normal.png
+NoRmAl Frame 055-metal- .png > frame_55_metal_normal.png
 
 # Animation frame padding is automatically added to names
-frame 69 - -.png => frame_069.png
+frame 69 - -.png > frame_069.png
 ```
 
 ## Getting Started
