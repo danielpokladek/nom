@@ -1,39 +1,77 @@
 import os
 import asyncio
+import argparse
 
 from aioshutil import copy2
 from enum import Enum
 from tabulate import tabulate
 
+from src.config import loadConfig
+from src.config import createNewConfig
+from src.config import current_config
+
 class Debug(Enum):
     NORMAL = 1
     VERBOSE = 2
 
-debug_level = Debug.NORMAL
 map_types = ["diffuse", "albedo", "normal", "roughness"]
-split_char = "_"
 
 async def main():
-    filesToRename = getFilesToRename()
+    args = setupParser()
 
-    if len(filesToRename) == 0:
+    if args.reset:
+        handleConfigReset()
+        return
+
+    loadConfig()
+
+    files_to_rename = getFilesToRename()
+
+    if len(files_to_rename) == 0:
         print("No files to rename - have a good day!")
         return
 
     print("Following files will be renamed..")
     print()
-    print(tabulate(filesToRename, headers=["Old Name", "New Name"]))
+    print(tabulate(files_to_rename, headers=["Old Name", "New Name"]))
 
     if not os.path.exists("./test/original"):
         os.makedirs("./test/original")
 
-    for file in filesToRename:
-        oldName = file[0]
-        newName = file[1]
+    for file in files_to_rename:
+        old_name = file[0]
+        new_name = file[1]
 
-        await copy2(f'./test/{oldName}', f'./test/original/{oldName}')
+        await copy2(f'./test/{old_name}', f'./test/original/{old_name}')
 
-        os.rename("./test/" + oldName, "./test/" + newName)
+        os.rename("./test/" + old_name, "./test/" + new_name)
+
+def setupParser():
+    parser = argparse.ArgumentParser(
+        prog="nom",
+        description="Normalize Our Mess - CLI tool for rule-based asset renaming."
+    )
+    parser.add_argument(
+        "-p", "--path",
+        help="Path to directory where assets should be organized."
+    )
+    parser.add_argument(
+        "-r", "--reset", action="store_true",
+        help="Resets config to original state."
+    )
+
+    return parser.parse_args()
+
+def handleConfigReset():
+    user_input = input("Are you sure you want to reset the config to default state? [y/N]: ")
+
+    if user_input.lower() == "y" or user_input.lower() == "yes":
+        createNewConfig()
+
+        print("Config has been reset to default state!")
+        return
+    else:
+        return
 
 def getFilesToRename():
     filesToRename = []
@@ -59,6 +97,9 @@ def parseFileName(originalFileName):
     numberStartIndex = 0
     numberLength = 1
     number = ""
+
+    split_char = current_config["split_char"]
+    frame_padding = int(current_config["frame_padding"])
     
     for i in range(len(letters)):
         letters[i] = letters[i].lower()
@@ -82,15 +123,13 @@ def parseFileName(originalFileName):
         else:
             wasPreviousNumber = False
 
-        letters[i] = parseSeparator(letters[i], "-")
-        letters[i] = parseSeparator(letters[i], ".")
-        letters[i] = parseSeparator(letters[i], " ")
+        letters[i] = parseSeparator(letters[i])
     
     if number != "":
         for i in range(numberLength):
             letters.pop(numberStartIndex)
 
-        letters.insert(numberStartIndex, number.zfill(3))
+        letters.insert(numberStartIndex, number.zfill(frame_padding))
 
     cleanFileName = "".join(letters)
 
@@ -111,7 +150,7 @@ def parseFileName(originalFileName):
 
     cleanFileName = "_".join(splitWords)
 
-    if debug_level == Debug.VERBOSE:
+    if current_config["debug_level"] == Debug.VERBOSE:
         print("Original Name:", originalFileName)
         print(letters)
 
@@ -121,7 +160,9 @@ def parseFileName(originalFileName):
 
     return cleanFileName + extension
 
-def parseSeparator(letter, separator):
+def parseSeparator(letter):
+    split_char = current_config["split_char"]
+
     if letter == "-":
         return split_char
 
