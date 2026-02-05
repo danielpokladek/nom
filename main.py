@@ -16,7 +16,6 @@ from src.config import createNewConfig
 
 from src.library import retrieveFilesForRenaming
 
-
 async def main():
     """
     Main workflow for nom.
@@ -66,6 +65,10 @@ def promptConfigReset():
         return
 
 def printRenamingOverview(files_to_rename: list[FileRenameRecord]):
+    """
+    Displays an overview of files to be renamed by printing a formatted
+    table  - uses tabulate for table formatting.
+    """
     tableData: list[list[str]] = []
 
     for file in files_to_rename:
@@ -77,6 +80,11 @@ def printRenamingOverview(files_to_rename: list[FileRenameRecord]):
     print("Total Files:", len(files_to_rename))
 
 async def backupAndRenameFiles(path: str, files_to_rename: list[FileRenameRecord]):
+    """
+    Backs up each file in files_to_rename from path to a backup
+    subdirectory, then renames the original file by copying the backup to
+    the new name, preserving metadata. Operates asynchronously.
+    """
     backup_path = os.path.join(path, "backup")
 
     if not os.path.exists(backup_path):
@@ -90,8 +98,11 @@ async def backupAndRenameFiles(path: str, files_to_rename: list[FileRenameRecord
         backup_file_path = os.path.join(backup_path, old_name)
         newFilePath = os.path.join(path, new_name)
 
+        # Because `copy2` attempts to preserve metadata, it isn't guaranteed
+        #  that all of it will be copied successfully - for that reason backup
+        #  the original file first, preserving all metadata, and then copy it
+        #  to the new location with the new name.
         await move(source_file_path, backup_file_path)
-
         await copy2(backup_file_path, newFilePath)
 
 if __name__ == "__main__":

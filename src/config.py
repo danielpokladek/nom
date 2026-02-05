@@ -22,6 +22,8 @@ def loadConfig():
     file_settings = config["FILE_SETTINGS"]
     current_config.split_char = file_settings["split_char"]
     current_config.frame_padding = int(file_settings["frame_padding"])
+    current_config.enable_frame_padding = bool(file_settings["enable_frame_padding"])
+    current_config.reorder_map_types = bool(file_settings["reorder_map_types"])
 
     app_settings = config["APP_SETTINGS"]
     current_config.debug_level = int(app_settings["debug_level"])
@@ -34,7 +36,9 @@ def createNewConfig():
     config["FILE_SETTINGS"] = {
         "split_char": "_",
         "frame_padding": "3",
-        "debug_level": "1"
+        "debug_level": "1",
+        "enable_frame_padding": "True",
+        "reorder_map_types": "True",
     }
 
     if current_config.debug_level == DebugLevel.VERBOSE:

@@ -38,83 +38,80 @@ def formatFileName(originalFileName: str) -> str:
     original extension.
     """
     split = os.path.splitext(originalFileName)
-    fileName = split[0]
+    file_name = split[0]
     extension = split[1]
-    
-    cleanFileName = ""
-    letters = list(fileName)
 
-    wasPreviousNumber = False
-    numberStartIndex = 0
-    numberLength = 1
-    number = ""
+    file_name = file_name.lower()
 
     split_char = current_config.split_char
-    frame_padding = current_config.frame_padding
-    
-    for i in range(len(letters)):
-        letters[i] = letters[i].lower()
 
-        if letters[i] == split_char:
-            continue
+    processed_parts: list[str] = []
+    current_number = ""
 
-        if letters[i] == "0":
-            letters[i] = ""
-            continue
 
-        if letters[i].isnumeric():
-            if wasPreviousNumber:
-                number += letters[i]
-                numberLength += 1
-            else:
-                number = letters[i]
-                numberStartIndex = i
-                numberLength = 1
-                wasPreviousNumber = True
+    for char in file_name:
+        mapped_char = substituteSeparator(char)
+
+        if mapped_char.isnumeric():
+            current_number += mapped_char
         else:
-            wasPreviousNumber = False
+            if current_number:
+                processed_parts.append(
+                    processNumber(current_number)
+                )
+                current_number = ""
 
-        letters[i] = substituteSeparator(letters[i])
-    
-    if number != "":
-        for i in range(numberLength):
-            letters.pop(numberStartIndex)
-
-        letters.insert(numberStartIndex, number.zfill(frame_padding))
-
-    cleanFileName = "".join(letters)
-
-    splitWords = cleanFileName.split("_")
-
-    if "" in splitWords:
-        splitWords.remove("")
-
-    for mapType in map_types:
-        if mapType in splitWords:
-            index = splitWords.index(mapType)
-            elem = splitWords.pop(index)
-
-            if number == "":
-                splitWords.append(elem)
+            if mapped_char == current_config.split_char:
+                processed_parts.append(split_char)
             else:
-                splitWords.insert(len(splitWords) - 1, elem)
+                processed_parts.append(mapped_char)
 
-    cleanFileName = "_".join(splitWords)
+    # Flush any pending number at the end.
+    if current_number:
+        processed_parts.append(processNumber(current_number))
+
+    clean_file_name = "".join(processed_parts)
+    split_words = clean_file_name.split(current_config.split_char)
+
+    # Filter out all empty strings.
+    split_words = [word for word in split_words if word]
+
+    has_number_at_end = False
+
+    if split_words and split_words[-1].isnumeric():
+        has_number_at_end = True
+
+    if current_config.reorder_map_types == True:
+        reorderMapTypes(split_words, has_number_at_end)
+
+    clean_file_name = split_char.join(split_words)
 
     if current_config.debug_level == DebugLevel.VERBOSE:
         print("Original Name:", originalFileName)
-        print(letters)
-
-        print("Clean Name:", cleanFileName + extension)
+        print("Clean Name:", clean_file_name + extension)
         print("--- --- ---")
         print()
 
-    return cleanFileName + extension
+    return clean_file_name + extension
+
+def processNumber(number: str) -> str:
+    """
+    Cleans a numeric string by removing leading zeros, and applying frame padding.
+    """
+    try:
+        val = int(number)
+    except ValueError:
+        return number
+    
+    if current_config.enable_frame_padding:
+        return str(val).zfill(current_config.frame_padding)
+    
+    return str(val)
 
 def substituteSeparator(letter: str):
     """
     Replaces commonly used separators in the input letter with the current
-    configuration's split_char; returns the original character otherwise.
+    configuration's `split_char`; returns the original character otherwise.
     """
     split_char = current_config.split_char
 
@@ -128,3 +125,36 @@ def substituteSeparator(letter: str):
         return split_char
 
     return letter
+
+def handleNumberPadding(characters: list[str], length: int, start_index: int, original_number: str):
+    """
+    Replaces a sequence of characters with a zero-padded version of original_number, 
+    starting at `start_index` and spanning `length` elements.
+    Uses the padding from configuration file.
+    """
+    # Remove the characters associated with the number from array.
+    del characters[start_index:start_index + length]
+    
+    padded_number = original_number.zfill(current_config.frame_padding)
+
+    # Add back the padded number in place of the previous characters.
+    characters.insert(
+        start_index,
+        padded_number
+    )
+
+def reorderMapTypes(words_list: list[str], has_number_at_end: bool):
+    """
+    Reorders elements in `words_list` based on their presence in `map_types`.
+    Moves found elements to the end or just before the last item, depending
+    on whether there is a number at the end. Modifies `words_list` in place.
+    """
+    for mapType in map_types:
+        if mapType in words_list:
+            index = words_list.index(mapType)
+            elem = words_list.pop(index)
+
+            if has_number_at_end:
+                words_list.insert(len(words_list) - 1, elem)
+            else:
+                words_list.append(elem)
