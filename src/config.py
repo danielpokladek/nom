@@ -1,17 +1,11 @@
 import os
 
 from configparser import ConfigParser
-from dataclasses import dataclass
 
-@dataclass
-class Config:
-    split_char: str = ""
-    frame_padding: int = 0
-    debug_level: int = 1
+from src.data import DebugLevel
+from src.data import current_config
 
 config_name = "nom.config"
-
-current_config = Config()
 
 def loadConfig():
     """
@@ -42,6 +36,10 @@ def createNewConfig():
         "frame_padding": "3",
         "debug_level": "1"
     }
+
+    if current_config.debug_level == DebugLevel.VERBOSE:
+        print("Creating new config file with default properties..")
+        print("If config already exists, it will be overwritten")
 
     with open(config_name, mode="w", encoding="utf-8") as config_file:
         config.write(config_file)
