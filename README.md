@@ -1,5 +1,5 @@
 <p align="center">
-    <img src="./resources/banner_transparent.png">
+    <img src="./resources/banner.png">
 </p>
 
 A Python based CLI tool used for rule-based asset and file renaming - because your mess, is our mess and I don't like messy asset names; you tell us when, and we organize the mess.
