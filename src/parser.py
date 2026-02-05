@@ -23,6 +23,10 @@ def buildParser():
         "-d", "--dry", action="store_true",
         help="Dry run - shows what files would be renamed without actually renaming them."
     )
+    optional.add_argument(
+        "-nl", "--no_logo", action="store_true",
+        help="When set, no logo and tagline will be shown - alternatively, can be disabled in config."
+    )
 
     settings = parser.add_argument_group("settings arguments")
     settings.add_argument(

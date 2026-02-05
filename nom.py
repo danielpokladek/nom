@@ -6,6 +6,8 @@ import time
 from tabulate import tabulate
 
 from src.data import FileRenameRecord
+from src.data import ascii_logo
+from src.data import current_config
 
 from src.parser import buildParser
 
@@ -92,6 +94,9 @@ async def main():
         return
     
     loadConfig()
+
+    if not args.no_logo and current_config.show_logo:
+        print(ascii_logo)
     
     files_path = args.path
     files_to_rename: list[FileRenameRecord] = retrieveFilesForRenaming(files_path)

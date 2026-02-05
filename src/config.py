@@ -17,9 +17,10 @@ def loadConfig():
         createNewConfig()
 
     config = ConfigParser()
-    config.read(config_name)
+    config.read("./" + config_name)
 
     file_settings = config["FILE_SETTINGS"]
+    current_config.show_logo = bool(file_settings["show_logo"])
     current_config.split_char = file_settings["split_char"]
     current_config.frame_padding = int(file_settings["frame_padding"])
     current_config.enable_frame_padding = bool(file_settings["enable_frame_padding"])
@@ -34,11 +35,15 @@ def createNewConfig():
     """
     config = ConfigParser()
     config["FILE_SETTINGS"] = {
+        "show_logo": "True",
         "split_char": "_",
         "frame_padding": "3",
-        "debug_level": "1",
         "enable_frame_padding": "True",
         "reorder_map_types": "True",
+    }
+
+    config["APP_SETTINGS"] = {
+        "debug_level": "1"
     }
 
     if current_config.debug_level == DebugLevel.VERBOSE:
