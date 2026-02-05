@@ -41,7 +41,7 @@ def printRenamingOverview(files_to_rename: list[FileRenameRecord]):
     tableData: list[list[str]] = []
 
     for file in files_to_rename:
-        tableData.append([file.oldName, file.newName])
+        tableData.append([file.old_name, file.new_name])
 
     print("Following files will be renamed..")
     print()

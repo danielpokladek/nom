@@ -27,8 +27,8 @@ class FileRenameRecord:
     """
     Represents a file renaming record, storing the oldName and newName as strings.
     """
-    oldName: str
-    newName: str
+    old_name: str
+    new_name: str
 
 ascii_logo = r"""
           _____                   _______                   _____          

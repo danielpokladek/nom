@@ -24,25 +24,25 @@ def retrieveFilesForRenaming(path: Path) -> list[FileRenameRecord]:
     Returns a list of files in the whose names differ 
     from their parsed names, indicating they need to be renamed.
     """
-    filesToRename: list[FileRenameRecord] = []
-    rawFiles = [file for file in os.listdir(path) if os.path.isfile(Path.joinpath(path, file))]
+    files_to_rename: list[FileRenameRecord] = []
+    raw_files = [file for file in os.listdir(path) if os.path.isfile(Path.joinpath(path, file))]
 
-    for file in rawFiles:
+    for file in raw_files:
         newFileName = formatFileName(file)
         
         if (file != newFileName):
-            filesToRename.append(FileRenameRecord(file, newFileName))
+            files_to_rename.append(FileRenameRecord(file, newFileName))
 
-    return filesToRename
+    return files_to_rename
 
-def formatFileName(originalFileName: str) -> str:
+def formatFileName(input_file_name: str) -> str:
     """
     Formats a file name by normalizing case, removing zeros, padding numeric
     sequences, replacing separators, and reordering specific keywords based
     on configuration settings. Returns the cleaned file name with its
     original extension.
     """
-    split = os.path.splitext(originalFileName)
+    split = os.path.splitext(input_file_name)
     file_name = split[0]
     extension = split[1]
 
@@ -52,7 +52,6 @@ def formatFileName(originalFileName: str) -> str:
 
     processed_parts: list[str] = []
     current_number = ""
-
 
     for char in file_name:
         mapped_char = substituteSeparator(char)
@@ -92,7 +91,7 @@ def formatFileName(originalFileName: str) -> str:
     clean_file_name = split_char.join(split_words)
 
     if current_config.debug_level == DebugLevel.VERBOSE:
-        print("Original Name:", originalFileName)
+        print("Original Name:", input_file_name)
         print("Clean Name:", clean_file_name + extension)
         print("--- --- ---")
         print()
@@ -176,16 +175,16 @@ async def backupAndRenameFiles(path: Path, files_to_rename: list[FileRenameRecor
         os.makedirs(backup_path)
 
     for file in files_to_rename:
-        old_name = file.oldName
-        new_name = file.newName
+        old_name = file.old_name
+        new_name = file.new_name
 
         source_file_path = os.path.join(path, old_name)
         backup_file_path = os.path.join(backup_path, old_name)
-        newFilePath = os.path.join(path, new_name)
+        new_file_path = os.path.join(path, new_name)
 
         # Because `copy2` attempts to preserve metadata, it isn't guaranteed
         #  that all of it will be copied successfully - for that reason backup
         #  the original file first, preserving all metadata, and then copy it
         #  to the new location with the new name.
         await move(source_file_path, backup_file_path)
-        await copy2(backup_file_path, newFilePath)
+        await copy2(backup_file_path, new_file_path)
