@@ -4,6 +4,7 @@ import sys
 import time
 
 from tabulate import tabulate
+from pathlib import Path
 
 from src.data import FileRenameRecord
 from src.data import ascii_logo
@@ -83,6 +84,12 @@ async def main():
     Main workflow for nom.
     """
     parser = buildParser()
+    
+    # If no params have been passed, print help.
+    if not len(sys.argv) > 1:
+        parser.print_help()
+        return
+        
     args = parser.parse_args()
     
     if args.reset:
@@ -98,7 +105,12 @@ async def main():
     if not args.no_logo and current_config.show_logo:
         print(ascii_logo)
     
-    files_path = args.path
+    files_path = Path(args.path).resolve()
+
+    if not files_path.exists():
+        print("Invalid Path : Directory does not exist!")
+        return
+
     files_to_rename: list[FileRenameRecord] = retrieveFilesForRenaming(files_path)
 
     if len(files_to_rename) == 0:

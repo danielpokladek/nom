@@ -1,5 +1,7 @@
 import os
 
+from pathlib import Path
+
 from aioshutil import copy2
 from aioshutil import move
 
@@ -17,13 +19,13 @@ map_types = [
     "lookup", "lut"
 ]
 
-def retrieveFilesForRenaming(path: str) -> list[FileRenameRecord]:
+def retrieveFilesForRenaming(path: Path) -> list[FileRenameRecord]:
     """
     Returns a list of files in the whose names differ 
     from their parsed names, indicating they need to be renamed.
     """
     filesToRename: list[FileRenameRecord] = []
-    rawFiles = [file for file in os.listdir(path) if os.path.isfile(path + file)]
+    rawFiles = [file for file in os.listdir(path) if os.path.isfile(Path.joinpath(path, file))]
 
     for file in rawFiles:
         newFileName = formatFileName(file)
@@ -162,7 +164,7 @@ def reorderMapTypes(words_list: list[str], has_number_at_end: bool):
             else:
                 words_list.append(elem)
 
-async def backupAndRenameFiles(path: str, files_to_rename: list[FileRenameRecord]):
+async def backupAndRenameFiles(path: Path, files_to_rename: list[FileRenameRecord]):
     """
     Backs up each file in files_to_rename from path to a backup
     subdirectory, then renames the original file by copying the backup to
