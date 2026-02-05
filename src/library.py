@@ -1,5 +1,8 @@
 import os
 
+from aioshutil import copy2
+from aioshutil import move
+
 from src.data import current_config
 from src.data import DebugLevel
 from src.data import FileRenameRecord
@@ -158,3 +161,29 @@ def reorderMapTypes(words_list: list[str], has_number_at_end: bool):
                 words_list.insert(len(words_list) - 1, elem)
             else:
                 words_list.append(elem)
+
+async def backupAndRenameFiles(path: str, files_to_rename: list[FileRenameRecord]):
+    """
+    Backs up each file in files_to_rename from path to a backup
+    subdirectory, then renames the original file by copying the backup to
+    the new name, preserving metadata. Operates asynchronously.
+    """
+    backup_path = os.path.join(path, "backup")
+
+    if not os.path.exists(backup_path):
+        os.makedirs(backup_path)
+
+    for file in files_to_rename:
+        old_name = file.oldName
+        new_name = file.newName
+
+        source_file_path = os.path.join(path, old_name)
+        backup_file_path = os.path.join(backup_path, old_name)
+        newFilePath = os.path.join(path, new_name)
+
+        # Because `copy2` attempts to preserve metadata, it isn't guaranteed
+        #  that all of it will be copied successfully - for that reason backup
+        #  the original file first, preserving all metadata, and then copy it
+        #  to the new location with the new name.
+        await move(source_file_path, backup_file_path)
+        await copy2(backup_file_path, newFilePath)

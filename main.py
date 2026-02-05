@@ -1,9 +1,7 @@
-import os
 import asyncio
 import webbrowser
-
-from aioshutil import copy2
-from aioshutil import move
+import sys
+import time
 
 from tabulate import tabulate
 
@@ -15,39 +13,7 @@ from src.config import loadConfig
 from src.config import createNewConfig
 
 from src.library import retrieveFilesForRenaming
-
-async def main():
-    """
-    Main workflow for nom.
-    """
-    parser = buildParser()
-    args = parser.parse_args()
-    
-    if args.reset:
-        promptConfigReset()
-        return
-    
-    if args.config:
-        webbrowser.open("nom.config")
-        return
-    
-    loadConfig()
-    
-    files_path = args.path
-    files_to_rename: list[FileRenameRecord] = retrieveFilesForRenaming(files_path)
-
-    if len(files_to_rename) == 0:
-        print("No files require renaming.")
-        return
-    
-    printRenamingOverview(files_to_rename)
-
-    if args.dry:
-        print()
-        print("This was a dry run - no files were actually renamed.")
-        return
-    
-    await backupAndRenameFiles(files_path, files_to_rename)
+from src.library import backupAndRenameFiles
 
 def promptConfigReset():
     """
@@ -79,31 +45,70 @@ def printRenamingOverview(files_to_rename: list[FileRenameRecord]):
     print(tabulate(tableData, headers=["Old Name", "New Name"], tablefmt="rounded_grid"))
     print("Total Files:", len(files_to_rename))
 
-async def backupAndRenameFiles(path: str, files_to_rename: list[FileRenameRecord]):
+def playAnimation(files_number: int = 3):
     """
-    Backs up each file in files_to_rename from path to a backup
-    subdirectory, then renames the original file by copying the backup to
-    the new name, preserving metadata. Operates asynchronously.
+    Plays an animation of eating the files represented as dots from left to right.
     """
-    backup_path = os.path.join(path, "backup")
+    mouth_open = "<" 
+    mouth_closed = "-"
 
-    if not os.path.exists(backup_path):
-        os.makedirs(backup_path)
+    target_text = ""
 
-    for file in files_to_rename:
-        old_name = file.oldName
-        new_name = file.newName
+    for _ in range(files_number):
+        target_text += "."
 
-        source_file_path = os.path.join(path, old_name)
-        backup_file_path = os.path.join(backup_path, old_name)
-        newFilePath = os.path.join(path, new_name)
+    # Ensure cursor is at start
+    sys.stdout.write("\r")
+    
+    for i in range(files_number + 1):
+        character = mouth_open if i % 2 == 0 else mouth_closed
+        
+        frame = " " * i + character + target_text[i:]
+        
+        # Write to stdout without a newline, then flush buffer
+        sys.stdout.write(f"\r{frame}")
+        sys.stdout.flush()
+        
+        # Speed of animation
+        time.sleep(0.15)
 
-        # Because `copy2` attempts to preserve metadata, it isn't guaranteed
-        #  that all of it will be copied successfully - for that reason backup
-        #  the original file first, preserving all metadata, and then copy it
-        #  to the new location with the new name.
-        await move(source_file_path, backup_file_path)
-        await copy2(backup_file_path, newFilePath)
+    # Clean up the line when done
+    sys.stdout.write(f"\r{' ' * (files_number + 1)}\r")
+    sys.stdout.flush()
+
+async def main():
+    """
+    Main workflow for nom.
+    """
+    parser = buildParser()
+    args = parser.parse_args()
+    
+    if args.reset:
+        promptConfigReset()
+        return
+    
+    if args.config:
+        webbrowser.open("nom.config")
+        return
+    
+    loadConfig()
+    
+    files_path = args.path
+    files_to_rename: list[FileRenameRecord] = retrieveFilesForRenaming(files_path)
+
+    if len(files_to_rename) == 0:
+        print("No files require renaming.")
+        return
+    
+    printRenamingOverview(files_to_rename)
+    playAnimation(len(files_to_rename))
+
+    if args.dry:
+        print()
+        print("This was a dry run - no files were actually renamed.")
+        return
+    
+    await backupAndRenameFiles(files_path, files_to_rename)
 
 if __name__ == "__main__":
     asyncio.run(main())
