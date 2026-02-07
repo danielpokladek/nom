@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 aioshutil = "*"
 tabulate = "*"
+platformdirs = "*"
 
 [dev-packages]
 pyinstaller = "*"

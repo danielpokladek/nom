@@ -1,11 +1,14 @@
 import os
 
+from platformdirs import user_config_path
 from configparser import ConfigParser
 
 from src.data import DebugLevel
 from src.data import current_config
 
-config_name = "nom.config"
+app_name = "nom"
+app_author = "dpokladek"
+path_to_config = user_config_path(app_name, app_author)
 
 def loadConfig():
     """
@@ -13,11 +16,12 @@ def loadConfig():
     missing, and updates current_config with values from the relevant
     config sections.
     """
-    if not os.path.isfile(config_name):
+
+    if not os.path.isfile(path_to_config):
         createNewConfig()
 
     config = ConfigParser()
-    config.read("./" + config_name)
+    config.read(path_to_config)
 
     file_settings = config["FILE_SETTINGS"]
     current_config.show_logo = bool(file_settings["show_logo"])
@@ -50,5 +54,5 @@ def createNewConfig():
         print("Creating new config file with default properties..")
         print("If config already exists, it will be overwritten")
 
-    with open(config_name, mode="w", encoding="utf-8") as config_file:
+    with open(path_to_config, mode="w", encoding="utf-8") as config_file:
         config.write(config_file)

@@ -2,6 +2,7 @@
 /backup
 /dist
 /build
+/release
 
 nom.config
 
