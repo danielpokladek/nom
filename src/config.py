@@ -8,7 +8,10 @@ from src.data import current_config
 
 app_name = "nom"
 app_author = "dpokladek"
+
+config_name = "nom.config"
 path_to_config = user_config_path(app_name, app_author)
+full_path = os.path.join(path_to_config, config_name)
 
 def loadConfig():
     """
@@ -17,11 +20,11 @@ def loadConfig():
     config sections.
     """
 
-    if not os.path.isfile(path_to_config):
+    if not os.path.isfile(full_path):
         createNewConfig()
 
     config = ConfigParser()
-    config.read(path_to_config)
+    config.read(full_path)
 
     file_settings = config["FILE_SETTINGS"]
     current_config.show_logo = bool(file_settings["show_logo"])
@@ -54,5 +57,7 @@ def createNewConfig():
         print("Creating new config file with default properties..")
         print("If config already exists, it will be overwritten")
 
-    with open(path_to_config, mode="w", encoding="utf-8") as config_file:
+    os.makedirs(os.path.dirname(full_path), exist_ok=True)
+
+    with open(full_path, mode="w", encoding="utf-8") as config_file:
         config.write(config_file)
