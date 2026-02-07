@@ -119,16 +119,12 @@ def substituteSeparator(letter: str):
     """
     split_char = current_config.split_char
 
-    if letter == "-":
-        return split_char
-
-    if letter == " ":
-        return split_char
-
-    if letter == ".":
-        return split_char
-
-    return letter
+    match letter:
+        case "-" | " " | "." | "(" | ")":
+            return split_char
+        
+        case _:
+            return letter
 
 def handleNumberPadding(characters: list[str], length: int, start_index: int, original_number: str):
     """
